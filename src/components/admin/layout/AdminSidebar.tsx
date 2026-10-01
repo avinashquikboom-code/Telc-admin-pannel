@@ -3,12 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard,
   BookOpen,
   Layers,
   Languages,
-  Calendar,
+  CalendarDays,
   ClipboardCheck,
   RefreshCw,
   Users,
@@ -26,6 +27,69 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth/authContext';
 import { Badge } from '@/components/ui/badge';
 
+export type AdminMenuItem = {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+};
+
+export type AdminMenuGroup = {
+  label: string | null;
+  items: AdminMenuItem[];
+};
+
+const menuGroups: AdminMenuGroup[] = [
+  {
+    label: null,
+    items: [
+      {
+        title: 'Dashboard',
+        href: '/admin/dashboard',
+        icon: LayoutDashboard,
+      },
+    ],
+  },
+  {
+    label: 'Learning Content',
+    items: [
+      { title: 'Courses', href: '/admin/courses', icon: BookOpen },
+      { title: 'Chapters', href: '/admin/chapters', icon: Layers },
+      { title: 'Vocabulary', href: '/admin/vocabulary', icon: Languages },
+      { title: 'Learning Sessions', href: '/admin/learning-sessions', icon: CalendarDays },
+      { title: 'Tests', href: '/admin/tests', icon: ClipboardCheck },
+    ],
+  },
+  {
+    label: 'Review',
+    items: [
+      { title: 'Review Rules', href: '/admin/review-settings', icon: RefreshCw },
+      { title: 'Review Sessions', href: '/admin/reviews', icon: CalendarDays },
+    ],
+  },
+  {
+    label: 'Users',
+    items: [
+      { title: 'Learners', href: '/admin/users', icon: Users },
+      { title: 'User Progress', href: '/admin/progress', icon: UserRound },
+    ],
+  },
+  {
+    label: 'Analytics',
+    items: [
+      { title: 'Overview', href: '/admin/analytics', icon: BarChart3 },
+      { title: 'Learning Analytics', href: '/admin/analytics/learning', icon: BarChart3 },
+      { title: 'Vocabulary Analytics', href: '/admin/analytics/vocabulary', icon: Languages },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { title: 'Notifications', href: '/admin/notifications', icon: Bell },
+      { title: 'Settings', href: '/admin/settings', icon: Settings },
+    ],
+  },
+];
+
 interface SidebarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
@@ -41,58 +105,6 @@ export function AdminSidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout, canAccessRoute } = useAuth();
-
-  const navigationGroups = [
-    {
-      group: null,
-      items: [
-        {
-          name: 'Dashboard',
-          href: '/admin/dashboard',
-          icon: LayoutDashboard,
-        },
-      ],
-    },
-    {
-      group: 'Learning Content',
-      items: [
-        { name: 'Courses', href: '/admin/courses', icon: BookOpen },
-        { name: 'Chapters', href: '/admin/chapters', icon: Layers },
-        { name: 'Vocabulary', href: '/admin/vocabulary', icon: Languages },
-        { name: 'Learning Sessions', href: '/admin/learning-sessions', icon: Calendar },
-        { name: 'Tests', href: '/admin/tests', icon: ClipboardCheck },
-      ],
-    },
-    {
-      group: 'Review',
-      items: [
-        { name: 'Review Rules', href: '/admin/review-settings', icon: RefreshCw },
-        { name: 'Review Sessions', href: '/admin/reviews', icon: Calendar },
-      ],
-    },
-    {
-      group: 'Users',
-      items: [
-        { name: 'Learners', href: '/admin/users', icon: Users },
-        { name: 'User Progress', href: '/admin/progress', icon: UserRound },
-      ],
-    },
-    {
-      group: 'Analytics',
-      items: [
-        { name: 'Overview', href: '/admin/analytics', icon: BarChart3 },
-        { name: 'Learning Analytics', href: '/admin/analytics/learning', icon: BarChart3 },
-        { name: 'Vocabulary Analytics', href: '/admin/analytics/vocabulary', icon: Languages },
-      ],
-    },
-    {
-      group: 'System',
-      items: [
-        { name: 'Notifications', href: '/admin/notifications', icon: Bell },
-        { name: 'Settings', href: '/admin/settings', icon: Settings },
-      ],
-    },
-  ];
 
   const sidebarContent = (
     <div className="flex h-full flex-col justify-between bg-white text-slate-800">
@@ -123,7 +135,7 @@ export function AdminSidebar({
           <button
             onClick={onToggleCollapse}
             aria-label="Toggle Sidebar"
-            className="hidden md:flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+            className="hidden md:flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
@@ -131,18 +143,19 @@ export function AdminSidebar({
 
         {/* Navigation list */}
         <div className="space-y-4 px-3 py-4 max-h-[calc(100vh-175px)] overflow-y-auto">
-          {navigationGroups.map((group, idx) => {
+          {menuGroups.map((group, groupIdx) => {
             // Filter items based on user role permissions
             const visibleItems = group.items.filter((item) => canAccessRoute(item.href));
             if (visibleItems.length === 0) return null;
 
             return (
-              <div key={idx} className="space-y-1">
-                {group.group && !collapsed && (
+              <div key={group.label || `group-${groupIdx}`} className="space-y-1">
+                {group.label && !collapsed && (
                   <h4 className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                    {group.group}
+                    {group.label}
                   </h4>
                 )}
+
                 {visibleItems.map((item) => {
                   const Icon = item.icon;
                   const isActive =
@@ -151,11 +164,11 @@ export function AdminSidebar({
                       : pathname.startsWith(item.href);
 
                   return (
-                    <a
+                    <Link
                       key={item.href}
                       href={item.href}
                       onClick={onCloseMobile}
-                      title={collapsed ? item.name : undefined}
+                      title={collapsed ? item.title : undefined}
                       className={cn(
                         'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer',
                         isActive
@@ -170,8 +183,8 @@ export function AdminSidebar({
                           isActive ? 'text-blue-600' : 'text-slate-500'
                         )}
                       />
-                      {!collapsed && <span className="truncate">{item.name}</span>}
-                    </a>
+                      {!collapsed && <span className="truncate">{item.title}</span>}
+                    </Link>
                   );
                 })}
               </div>
@@ -212,7 +225,7 @@ export function AdminSidebar({
         )}
 
         <div className="flex items-center gap-1">
-          <a
+          <Link
             href="/admin/settings"
             onClick={onCloseMobile}
             title={collapsed ? 'Admin Settings' : undefined}
@@ -223,7 +236,7 @@ export function AdminSidebar({
           >
             <ShieldCheck className="h-4 w-4 shrink-0 text-slate-500" />
             {!collapsed && <span>Roles & Auth</span>}
-          </a>
+          </Link>
 
           <button
             onClick={logout}

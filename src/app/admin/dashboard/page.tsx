@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import {
   Users,
   BookOpen,
@@ -121,7 +121,7 @@ export default function DashboardPage() {
 
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Today's Sessions</span>
+            <span>Today&apos;s Sessions</span>
             <Clock className="h-4 w-4 text-emerald-500" />
           </div>
           <p className="mt-2 text-xl font-bold text-slate-900">{analytics.sessionsToday}</p>

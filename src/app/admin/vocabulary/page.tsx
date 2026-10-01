@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import { ColumnDef } from '@tanstack/react-table';
 import {
   Languages,
@@ -49,7 +49,7 @@ export default function VocabularyPage() {
     return true;
   });
 
-  const columns: ColumnDef<VocabularyWord>[] = [
+  const columns: ColumnDef<VocabularyWord, any>[] = [
     {
       accessorKey: 'german',
       header: 'German Word',

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import { ColumnDef } from '@tanstack/react-table';
 import {
   Users,
@@ -33,7 +33,7 @@ export default function UsersPage() {
     return true;
   });
 
-  const columns: ColumnDef<Learner>[] = [
+  const columns: ColumnDef<Learner, any>[] = [
     {
       accessorKey: 'name',
       header: 'Learner',

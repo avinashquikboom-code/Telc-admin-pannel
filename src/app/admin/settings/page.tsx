@@ -26,12 +26,13 @@ import { AdminRole } from '@/types';
 import { formatDate } from '@/lib/utils';
 
 export default function SettingsPage() {
-  const { user, switchRole, updateAdminProfile } = useAuth();
+  const { user, switchRole } = useAuth();
   const {
     learningSequence,
     updateLearningSequence,
     reviewSettings,
     updateReviewSettings,
+    updateAdminProfile,
   } = useAdminStore();
 
   const [activeTab, setActiveTab] = useState('general');

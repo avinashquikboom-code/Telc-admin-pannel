@@ -1,7 +1,7 @@
 'use client';
 
 import React, { use, useState } from 'react';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Languages,

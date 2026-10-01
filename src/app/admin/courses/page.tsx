@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import { ColumnDef } from '@tanstack/react-table';
 import {
   BookOpen,
@@ -35,7 +35,7 @@ export default function CoursesPage() {
     return true;
   });
 
-  const columns: ColumnDef<Course>[] = [
+  const columns: ColumnDef<Course, any>[] = [
     {
       accessorKey: 'title',
       header: 'Course',
