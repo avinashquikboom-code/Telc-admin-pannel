@@ -34,12 +34,98 @@ export type AdminMenuItem = {
   title: string;
   href: string;
   icon: LucideIcon;
+  allowNested?: boolean;
 };
 
 export type AdminMenuGroup = {
   label: string | null;
   items: AdminMenuItem[];
 };
+
+export function isNavItemActive(
+  pathname: string,
+  href: string,
+  allowNested: boolean = false
+): boolean {
+  if (pathname === href) {
+    return true;
+  }
+
+  // Prevent Settings collision when visiting Integrations (/admin/integrations or /admin/settings/integrations)
+  if (
+    href === '/admin/settings' &&
+    (pathname === '/admin/integrations' ||
+      pathname.startsWith('/admin/integrations/') ||
+      pathname === '/admin/settings/integrations' ||
+      pathname.startsWith('/admin/settings/integrations/'))
+  ) {
+    return false;
+  }
+
+  // Match Integrations for both /admin/integrations and /admin/settings/integrations
+  if (
+    href === '/admin/integrations' &&
+    (pathname === '/admin/settings/integrations' ||
+      pathname.startsWith('/admin/settings/integrations/'))
+  ) {
+    return true;
+  }
+
+  // Prevent Analytics Overview collision when on child analytics pages
+  if (
+    href === '/admin/analytics' &&
+    (pathname === '/admin/analytics/learning' ||
+      pathname.startsWith('/admin/analytics/learning/') ||
+      pathname === '/admin/analytics/vocabulary' ||
+      pathname.startsWith('/admin/analytics/vocabulary/'))
+  ) {
+    return false;
+  }
+
+  // Support route aliases
+  if (
+    href === '/admin/reviews' &&
+    (pathname === '/admin/review-sessions' ||
+      pathname.startsWith('/admin/review-sessions/'))
+  ) {
+    return true;
+  }
+  if (
+    href === '/admin/users' &&
+    (pathname === '/admin/learners' ||
+      pathname.startsWith('/admin/learners/'))
+  ) {
+    return true;
+  }
+  if (
+    href === '/admin/progress' &&
+    (pathname === '/admin/user-progress' ||
+      pathname.startsWith('/admin/user-progress/'))
+  ) {
+    return true;
+  }
+  if (
+    href === '/admin/analytics/learning' &&
+    (pathname === '/admin/learning-analytics' ||
+      pathname.startsWith('/admin/learning-analytics/'))
+  ) {
+    return true;
+  }
+  if (
+    href === '/admin/analytics/vocabulary' &&
+    (pathname === '/admin/vocabulary-analytics' ||
+      pathname.startsWith('/admin/vocabulary-analytics/'))
+  ) {
+    return true;
+  }
+
+  // Explicit nested route matching
+  if (allowNested) {
+    return pathname.startsWith(`${href}/`);
+  }
+
+  return false;
+}
 
 const menuGroups: AdminMenuGroup[] = [
   {
@@ -49,53 +135,54 @@ const menuGroups: AdminMenuGroup[] = [
         title: 'Dashboard',
         href: '/admin/dashboard',
         icon: LayoutDashboard,
+        allowNested: false,
       },
     ],
   },
   {
     label: 'Learning Content',
     items: [
-      { title: 'Courses', href: '/admin/courses', icon: BookOpen },
-      { title: 'Chapters', href: '/admin/chapters', icon: Layers },
-      { title: 'Vocabulary', href: '/admin/vocabulary', icon: Languages },
-      { title: 'Learning Sessions', href: '/admin/learning-sessions', icon: CalendarDays },
-      { title: 'Tests', href: '/admin/tests', icon: ClipboardCheck },
+      { title: 'Courses', href: '/admin/courses', icon: BookOpen, allowNested: true },
+      { title: 'Chapters', href: '/admin/chapters', icon: Layers, allowNested: true },
+      { title: 'Vocabulary', href: '/admin/vocabulary', icon: Languages, allowNested: true },
+      { title: 'Learning Sessions', href: '/admin/learning-sessions', icon: CalendarDays, allowNested: true },
+      { title: 'Tests', href: '/admin/tests', icon: ClipboardCheck, allowNested: true },
     ],
   },
   {
     label: 'Review',
     items: [
-      { title: 'Review Rules', href: '/admin/review-settings', icon: RefreshCw },
-      { title: 'Review Sessions', href: '/admin/reviews', icon: CalendarDays },
+      { title: 'Review Rules', href: '/admin/review-settings', icon: RefreshCw, allowNested: true },
+      { title: 'Review Sessions', href: '/admin/reviews', icon: CalendarDays, allowNested: true },
     ],
   },
   {
     label: 'Users',
     items: [
-      { title: 'Learners', href: '/admin/users', icon: Users },
-      { title: 'User Progress', href: '/admin/progress', icon: UserRound },
+      { title: 'Learners', href: '/admin/users', icon: Users, allowNested: true },
+      { title: 'User Progress', href: '/admin/progress', icon: UserRound, allowNested: true },
     ],
   },
   {
     label: 'Financial',
     items: [
-      { title: 'Payments', href: '/admin/payments', icon: CreditCard },
+      { title: 'Payments', href: '/admin/payments', icon: CreditCard, allowNested: true },
     ],
   },
   {
     label: 'Analytics',
     items: [
-      { title: 'Overview', href: '/admin/analytics', icon: BarChart3 },
-      { title: 'Learning Analytics', href: '/admin/analytics/learning', icon: BarChart3 },
-      { title: 'Vocabulary Analytics', href: '/admin/analytics/vocabulary', icon: Languages },
+      { title: 'Overview', href: '/admin/analytics', icon: BarChart3, allowNested: false },
+      { title: 'Learning Analytics', href: '/admin/analytics/learning', icon: BarChart3, allowNested: true },
+      { title: 'Vocabulary Analytics', href: '/admin/analytics/vocabulary', icon: Languages, allowNested: true },
     ],
   },
   {
     label: 'System',
     items: [
-      { title: 'Notifications', href: '/admin/notifications', icon: Bell },
-      { title: 'Integrations', href: '/admin/settings/integrations', icon: Puzzle },
-      { title: 'Settings', href: '/admin/settings', icon: Settings },
+      { title: 'Notifications', href: '/admin/notifications', icon: Bell, allowNested: true },
+      { title: 'Integrations', href: '/admin/integrations', icon: Puzzle, allowNested: true },
+      { title: 'Settings', href: '/admin/settings', icon: Settings, allowNested: true },
     ],
   },
 ];
@@ -218,10 +305,7 @@ export function AdminSidebar({
 
                 {visibleItems.map((item) => {
                   const Icon = item.icon;
-                  const isActive =
-                    item.href === '/admin/dashboard'
-                      ? pathname === '/admin/dashboard'
-                      : pathname.startsWith(item.href);
+                  const isActive = isNavItemActive(pathname, item.href, item.allowNested);
 
                   return (
                     <Link
