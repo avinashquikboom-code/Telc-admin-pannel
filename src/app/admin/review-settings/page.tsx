@@ -15,8 +15,10 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAdminStore } from '@/lib/store';
+import { useToast } from '@/components/ui/toast';
 
 export default function ReviewSettingsPage() {
+  const { toast } = useToast();
   const { reviewSettings, updateReviewSettings } = useAdminStore();
   const [form, setForm] = useState(reviewSettings);
   const [savedNotice, setSavedNotice] = useState(false);
@@ -25,6 +27,11 @@ export default function ReviewSettingsPage() {
     e.preventDefault();
     updateReviewSettings(form);
     setSavedNotice(true);
+    toast({
+      title: 'Review Settings Saved',
+      description: 'Global spaced repetition parameters saved & broadcast to clients.',
+      variant: 'success',
+    });
     setTimeout(() => setSavedNotice(false), 3000);
   };
 

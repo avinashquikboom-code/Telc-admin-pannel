@@ -101,6 +101,20 @@ export default function SettingsPage() {
               <CardTitle>Platform Identification & Localization</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Third-Party Integrations quick banner */}
+              <div className="flex items-center justify-between p-4 rounded-xl border border-blue-200 bg-blue-50/60">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">Third-Party Gateway Integrations</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Configure WhatsApp Business Cloud API, Transactional Email, MSG91 SMS, and Razorpay.
+                  </p>
+                </div>
+                <a href="/admin/settings/integrations">
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5">
+                    Manage Integrations
+                  </Button>
+                </a>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">

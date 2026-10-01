@@ -1,30 +1,112 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { ColumnDef } from '@tanstack/react-table';
 import {
   Layers,
   Plus,
-  Eye,
+  Edit2,
   Trash2,
   Calendar,
   Languages,
   BookOpen,
 } from 'lucide-react';
-import { Chapter } from '@/types';
+import { Chapter, PublishingStatus } from '@/types';
 import { useAdminStore } from '@/lib/store';
 import { PageHeader } from '@/components/admin/navigation/PageHeader';
 import { DataTable } from '@/components/admin/tables/DataTable';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ConfirmDialog } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { FormDrawer } from '@/components/admin/drawers/FormDrawer';
+import { ConfirmationDrawer } from '@/components/admin/drawers/ConfirmationDrawer';
+import { useToast } from '@/components/ui/toast';
 
 export default function ChaptersPage() {
-  const { chapters, courses, deleteChapter, updateChapter } = useAdminStore();
+  const { chapters, courses, addChapter, updateChapter, deleteChapter } = useAdminStore();
+  const { toast } = useToast();
+
   const [courseFilter, setCourseFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [chapterToDelete, setChapterToDelete] = useState<Chapter | null>(null);
+
+  // Drawer states
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
+  const [form, setForm] = useState({
+    title: '',
+    courseId: courses[0]?.id || '',
+    chapterNumber: 1,
+    description: '',
+    daysCount: 7,
+    dailyWordTarget: 20,
+    reviewEnabled: true,
+    status: 'published' as PublishingStatus,
+  });
+
+  const handleOpenAdd = () => {
+    setEditingChapter(null);
+    setForm({
+      title: '',
+      courseId: courses[0]?.id || '',
+      chapterNumber: chapters.length + 1,
+      description: '',
+      daysCount: 7,
+      dailyWordTarget: 20,
+      reviewEnabled: true,
+      status: 'published',
+    });
+    setIsDrawerOpen(true);
+  };
+
+  const handleOpenEdit = (chapter: Chapter) => {
+    setEditingChapter(chapter);
+    setForm({
+      title: chapter.title,
+      courseId: chapter.courseId,
+      chapterNumber: chapter.chapterNumber,
+      description: chapter.description,
+      daysCount: chapter.daysCount,
+      dailyWordTarget: chapter.dailyWordTarget,
+      reviewEnabled: chapter.reviewEnabled,
+      status: chapter.status,
+    });
+    setIsDrawerOpen(true);
+  };
+
+  const handleSaveChapter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title) return;
+
+    const courseObj = courses.find((c) => c.id === form.courseId);
+    const courseTitle = courseObj ? courseObj.title : 'TELC German';
+
+    if (editingChapter) {
+      updateChapter(editingChapter.id, {
+        ...form,
+        courseTitle,
+      });
+      toast({
+        title: 'Chapter Updated',
+        description: `Kapitel ${form.chapterNumber}: "${form.title}" saved.`,
+        variant: 'success',
+      });
+    } else {
+      addChapter({
+        ...form,
+        courseTitle,
+      });
+      toast({
+        title: 'Chapter Created',
+        description: `Kapitel ${form.chapterNumber}: "${form.title}" created.`,
+        variant: 'success',
+      });
+    }
+
+    setIsDrawerOpen(false);
+  };
 
   const filteredChapters = chapters.filter((ch) => {
     if (courseFilter !== 'all' && ch.courseId !== courseFilter) return false;
@@ -44,12 +126,12 @@ export default function ChaptersPage() {
               <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
                 Ch. {chapter.chapterNumber}
               </span>
-              <a
-                href={`/admin/chapters/${chapter.id}`}
-                className="font-semibold text-slate-900 hover:text-blue-600 transition-colors"
+              <button
+                onClick={() => handleOpenEdit(chapter)}
+                className="font-semibold text-slate-900 hover:text-blue-600 transition-colors text-left cursor-pointer"
               >
                 {chapter.title}
-              </a>
+              </button>
             </div>
             <span className="text-[11px] text-slate-400 line-clamp-1 max-w-sm mt-0.5">
               {chapter.description}
@@ -69,7 +151,7 @@ export default function ChaptersPage() {
       accessorKey: 'daysCount',
       header: 'Schedule',
       cell: ({ row }) => (
-        <span className="text-slate-700">{row.original.daysCount} Days (20 words/day)</span>
+        <span className="text-slate-700">{row.original.daysCount} Days ({row.original.dailyWordTarget} words/day)</span>
       ),
     },
     {
@@ -95,10 +177,10 @@ export default function ChaptersPage() {
           <Badge
             variant={
               status === 'published'
-                ? 'success'
+                ? 'default'
                 : status === 'draft'
-                ? 'warning'
-                : 'secondary'
+                ? 'secondary'
+                : 'outline'
             }
             className="capitalize"
           >
@@ -109,25 +191,22 @@ export default function ChaptersPage() {
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: '',
       cell: ({ row }) => {
         const chapter = row.original;
         return (
           <div className="flex items-center gap-1">
-            <a href={`/admin/chapters/${chapter.id}`} title="View Chapter">
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 hover:text-blue-600">
-                <Eye className="h-4 w-4" />
-              </Button>
-            </a>
-            <a href={`/admin/vocabulary?chapterId=${chapter.id}`} title="Manage Vocabulary">
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 hover:text-blue-600">
-                <Languages className="h-4 w-4" />
-              </Button>
-            </a>
+            <button
+              onClick={() => handleOpenEdit(chapter)}
+              title="Edit in Right Drawer"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors cursor-pointer"
+            >
+              <Edit2 className="h-4 w-4" />
+            </button>
             <button
               onClick={() => setChapterToDelete(chapter)}
               title="Delete Chapter"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -141,14 +220,12 @@ export default function ChaptersPage() {
     <div className="space-y-6">
       <PageHeader
         title="Chapters"
-        description="Configure 7-day module chapters, daily word quotas (20 words/day), and cumulative review stages."
+        description="Configure structured 7-day chapter modules, daily 20-word targets, and chapter wrap-up milestones."
         actions={
-          <a href="/admin/chapters/new">
-            <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4" />
-              Create Chapter
-            </Button>
-          </a>
+          <Button onClick={handleOpenAdd} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Plus className="h-4 w-4" />
+            Create Chapter
+          </Button>
         }
       />
 
@@ -159,7 +236,6 @@ export default function ChaptersPage() {
         searchPlaceholder="Search chapters..."
         filters={
           <div className="flex flex-wrap items-center gap-2">
-            {/* Course Filter */}
             <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs">
               <span className="text-slate-400">Course:</span>
               <select
@@ -176,7 +252,6 @@ export default function ChaptersPage() {
               </select>
             </div>
 
-            {/* Status Filter */}
             <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs">
               <span className="text-slate-400">Status:</span>
               <select
@@ -187,31 +262,148 @@ export default function ChaptersPage() {
                 <option value="all">All Statuses</option>
                 <option value="published">Published</option>
                 <option value="draft">Draft</option>
+                <option value="archived">Archived</option>
               </select>
             </div>
           </div>
         }
         emptyTitle="No chapters found"
-        emptyDescription="Create your first chapter to organize vocabulary into daily 20-word sessions."
-        onAddFirst={() => window.location.assign('/admin/chapters/new')}
+        emptyDescription="Create a chapter module to organize vocabulary words into 7-day learning schedules."
+        onAddFirst={handleOpenAdd}
         addFirstLabel="+ Create First Chapter"
       />
 
-      {/* Delete confirmation dialog */}
-      <ConfirmDialog
-        open={!!chapterToDelete}
-        onOpenChange={(open) => !open && setChapterToDelete(null)}
-        title="Delete Chapter?"
-        description={`Are you sure you want to delete "${chapterToDelete?.title}"? All scheduled daily sessions will be deleted. This action cannot be undone.`}
-        confirmText="Delete Chapter"
-        variant="destructive"
-        onConfirm={() => {
-          if (chapterToDelete) {
+      {/* ======================================================== */}
+      {/* ADD / EDIT CHAPTER RIGHT-SIDE DRAWER */}
+      {/* ======================================================== */}
+      <FormDrawer
+        open={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        title={editingChapter ? 'Edit Chapter' : 'Create Chapter'}
+        description={
+          editingChapter
+            ? `Update settings for ${editingChapter.title}`
+            : 'Configure a new learning chapter module.'
+        }
+        submitLabel={editingChapter ? 'Save Changes' : 'Create Chapter'}
+        onSubmit={handleSaveChapter}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Parent Course</label>
+            <select
+              value={form.courseId}
+              onChange={(e) => setForm({ ...form, courseId: e.target.value })}
+              className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700"
+            >
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title} ({c.level})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Chapter Number</label>
+              <Input
+                type="number"
+                value={form.chapterNumber}
+                onChange={(e) => setForm({ ...form, chapterNumber: Number(e.target.value) })}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Chapter Title <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="e.g. Familie & Freunde"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Days Count</label>
+              <Input
+                type="number"
+                value={form.daysCount}
+                onChange={(e) => setForm({ ...form, daysCount: Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Daily Target</label>
+              <Input
+                type="number"
+                value={form.dailyWordTarget}
+                onChange={(e) => setForm({ ...form, dailyWordTarget: Number(e.target.value) })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
+            <Textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Overview of thematic topic covered in this chapter..."
+              rows={3}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50">
+            <div>
+              <p className="text-xs font-semibold text-slate-800">Spaced Review Integration</p>
+              <p className="text-[11px] text-slate-500">Enable Day 7 chapter review test</p>
+            </div>
+            <Switch
+              checked={form.reviewEnabled}
+              onCheckedChange={(val) => setForm({ ...form, reviewEnabled: val })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Publishing Status</label>
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value as PublishingStatus })}
+              className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700"
+            >
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+        </div>
+      </FormDrawer>
+
+      {/* ======================================================== */}
+      {/* DELETE CONFIRMATION DRAWER */}
+      {/* ======================================================== */}
+      {chapterToDelete && (
+        <ConfirmationDrawer
+          open={!!chapterToDelete}
+          onOpenChange={(open) => !open && setChapterToDelete(null)}
+          title="Delete Chapter?"
+          description={`Are you sure you want to delete "${chapterToDelete.title}"? Associated vocabulary words will be removed.`}
+          confirmText="Delete Chapter"
+          variant="destructive"
+          onConfirm={() => {
             deleteChapter(chapterToDelete.id);
+            toast({
+              title: 'Chapter Deleted',
+              description: `"${chapterToDelete.title}" deleted.`,
+              variant: 'default',
+            });
             setChapterToDelete(null);
-          }
-        }}
-      />
+          }}
+        />
+      )}
     </div>
   );
 }

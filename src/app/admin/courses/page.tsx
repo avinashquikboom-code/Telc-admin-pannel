@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { ColumnDef } from '@tanstack/react-table';
 import {
   BookOpen,
@@ -11,7 +10,6 @@ import {
   Copy,
   Archive,
   Trash2,
-  Filter,
   CheckCircle2,
 } from 'lucide-react';
 import { Course, CourseLevel, PublishingStatus } from '@/types';
@@ -20,13 +18,77 @@ import { PageHeader } from '@/components/admin/navigation/PageHeader';
 import { DataTable } from '@/components/admin/tables/DataTable';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ConfirmDialog } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { FormDrawer } from '@/components/admin/drawers/FormDrawer';
+import { ConfirmationDrawer } from '@/components/admin/drawers/ConfirmationDrawer';
+import { useToast } from '@/components/ui/toast';
 
 export default function CoursesPage() {
-  const { courses, deleteCourse, duplicateCourse, updateCourse } = useAdminStore();
+  const { courses, addCourse, updateCourse, deleteCourse, duplicateCourse } = useAdminStore();
+  const { toast } = useToast();
+
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
+
+  // Drawer states
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [form, setForm] = useState({
+    title: '',
+    level: 'B1' as CourseLevel,
+    description: '',
+    translationLanguage: 'English',
+    status: 'draft' as PublishingStatus,
+  });
+
+  const handleOpenAdd = () => {
+    setEditingCourse(null);
+    setForm({
+      title: '',
+      level: 'B1',
+      description: '',
+      translationLanguage: 'English',
+      status: 'published',
+    });
+    setIsDrawerOpen(true);
+  };
+
+  const handleOpenEdit = (course: Course) => {
+    setEditingCourse(course);
+    setForm({
+      title: course.title,
+      level: course.level,
+      description: course.description,
+      translationLanguage: course.translationLanguage,
+      status: course.status,
+    });
+    setIsDrawerOpen(true);
+  };
+
+  const handleSaveCourse = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title) return;
+
+    if (editingCourse) {
+      updateCourse(editingCourse.id, form);
+      toast({
+        title: 'Course Updated',
+        description: `"${form.title}" was successfully updated.`,
+        variant: 'success',
+      });
+    } else {
+      addCourse(form);
+      toast({
+        title: 'Course Created',
+        description: `"${form.title}" was added to learning catalog.`,
+        variant: 'success',
+      });
+    }
+
+    setIsDrawerOpen(false);
+  };
 
   // Filtered dataset
   const filteredCourses = courses.filter((c) => {
@@ -43,12 +105,12 @@ export default function CoursesPage() {
         const course = row.original;
         return (
           <div className="flex flex-col">
-            <a
-              href={`/admin/courses/${course.id}`}
-              className="font-semibold text-slate-900 hover:text-blue-600 transition-colors"
+            <button
+              onClick={() => handleOpenEdit(course)}
+              className="font-semibold text-slate-900 hover:text-blue-600 transition-colors text-left cursor-pointer"
             >
               {course.title}
-            </a>
+            </button>
             <span className="text-[11px] text-slate-400 line-clamp-1 max-w-sm">
               {course.description}
             </span>
@@ -99,18 +161,20 @@ export default function CoursesPage() {
     },
     {
       accessorKey: 'completionRate',
-      header: 'Progress',
-      cell: ({ row }) => {
-        const rate = row.original.completionRate;
-        return (
-          <div className="flex items-center gap-2">
-            <div className="h-1.5 w-16 rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full bg-blue-600 rounded-full" style={{ width: `${rate}%` }} />
-            </div>
-            <span className="text-xs font-semibold text-slate-700">{rate}%</span>
+      header: 'Completion',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full bg-blue-600 rounded-full"
+              style={{ width: `${row.original.completionRate}%` }}
+            />
           </div>
-        );
-      },
+          <span className="text-xs font-semibold text-slate-700">
+            {row.original.completionRate}%
+          </span>
+        </div>
+      ),
     },
     {
       accessorKey: 'status',
@@ -120,11 +184,7 @@ export default function CoursesPage() {
         return (
           <Badge
             variant={
-              status === 'published'
-                ? 'success'
-                : status === 'draft'
-                ? 'warning'
-                : 'secondary'
+              status === 'published' ? 'default' : status === 'draft' ? 'secondary' : 'outline'
             }
             className="capitalize"
           >
@@ -135,20 +195,29 @@ export default function CoursesPage() {
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: '',
       cell: ({ row }) => {
         const course = row.original;
         return (
           <div className="flex items-center gap-1">
-            <a href={`/admin/courses/${course.id}`} title="View Course">
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 hover:text-blue-600">
-                <Eye className="h-4 w-4" />
-              </Button>
-            </a>
             <button
-              onClick={() => duplicateCourse(course.id)}
+              onClick={() => handleOpenEdit(course)}
+              title="Edit in Right Drawer"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors cursor-pointer"
+            >
+              <Edit2 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => {
+                duplicateCourse(course.id);
+                toast({
+                  title: 'Course Duplicated',
+                  description: `Created a draft copy of "${course.title}".`,
+                  variant: 'info',
+                });
+              }}
               title="Duplicate Course"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
             >
               <Copy className="h-4 w-4" />
             </button>
@@ -156,16 +225,21 @@ export default function CoursesPage() {
               onClick={() => {
                 const nextStatus = course.status === 'archived' ? 'published' : 'archived';
                 updateCourse(course.id, { status: nextStatus });
+                toast({
+                  title: 'Status Updated',
+                  description: `Course is now ${nextStatus}.`,
+                  variant: 'info',
+                });
               }}
               title={course.status === 'archived' ? 'Restore Course' : 'Archive Course'}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-amber-700 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-amber-700 transition-colors cursor-pointer"
             >
               <Archive className="h-4 w-4" />
             </button>
             <button
               onClick={() => setCourseToDelete(course)}
               title="Delete Course"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -181,12 +255,10 @@ export default function CoursesPage() {
         title="Courses"
         description="Manage TELC curriculum levels, course modules, chapter hierarchies, and publishing states."
         actions={
-          <a href="/admin/courses/new">
-            <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4" />
-              Create Course
-            </Button>
-          </a>
+          <Button onClick={handleOpenAdd} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Plus className="h-4 w-4" />
+            Create Course
+          </Button>
         }
       />
 
@@ -233,25 +305,111 @@ export default function CoursesPage() {
         }
         emptyTitle="No courses found"
         emptyDescription="Create your first TELC learning course to begin adding chapters and vocabulary."
-        onAddFirst={() => window.location.assign('/admin/courses/new')}
+        onAddFirst={handleOpenAdd}
         addFirstLabel="+ Create First Course"
       />
 
-      {/* Delete Confirmation Modal */}
-      <ConfirmDialog
-        open={!!courseToDelete}
-        onOpenChange={(open) => !open && setCourseToDelete(null)}
-        title="Delete Course?"
-        description={`Are you sure you want to delete "${courseToDelete?.title}"? All chapters and associated vocabulary relationships will be permanently removed. This action cannot be undone.`}
-        confirmText="Delete Course"
-        variant="destructive"
-        onConfirm={() => {
-          if (courseToDelete) {
+      {/* ======================================================== */}
+      {/* ADD / EDIT COURSE RIGHT-SIDE DRAWER */}
+      {/* ======================================================== */}
+      <FormDrawer
+        open={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        title={editingCourse ? 'Edit Course' : 'Create Course'}
+        description={
+          editingCourse
+            ? `Modify curriculum settings for ${editingCourse.title}`
+            : 'Add a new TELC certificate curriculum to the platform.'
+        }
+        submitLabel={editingCourse ? 'Save Changes' : 'Create Course'}
+        onSubmit={handleSaveCourse}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Course Title <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="e.g. TELC Deutsch B1 — Komplettkurs"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">CEFR Level</label>
+              <select
+                value={form.level}
+                onChange={(e) => setForm({ ...form, level: e.target.value as CourseLevel })}
+                className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700"
+              >
+                <option value="A1">A1 — Absolute Beginner</option>
+                <option value="A2">A2 — Elementary</option>
+                <option value="B1">B1 — Intermediate (Exam)</option>
+                <option value="B2">B2 — Upper Intermediate</option>
+                <option value="C1">C1 — Advanced</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Translation Language</label>
+              <Input
+                value={form.translationLanguage}
+                onChange={(e) => setForm({ ...form, translationLanguage: e.target.value })}
+                placeholder="English"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
+            <Textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Full curriculum description and learning goals for the mobile app..."
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Publishing Status</label>
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value as PublishingStatus })}
+              className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700"
+            >
+              <option value="published">Published (Visible to learners)</option>
+              <option value="draft">Draft (Curriculum in progress)</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+        </div>
+      </FormDrawer>
+
+      {/* ======================================================== */}
+      {/* DELETE CONFIRMATION RIGHT-SIDE DRAWER */}
+      {/* ======================================================== */}
+      {courseToDelete && (
+        <ConfirmationDrawer
+          open={!!courseToDelete}
+          onOpenChange={(open) => !open && setCourseToDelete(null)}
+          title="Delete Course?"
+          description={`Are you sure you want to delete "${courseToDelete.title}"? All chapters and vocabulary relationships will be permanently removed.`}
+          confirmText="Delete Course"
+          variant="destructive"
+          onConfirm={() => {
             deleteCourse(courseToDelete.id);
+            toast({
+              title: 'Course Deleted',
+              description: `"${courseToDelete.title}" has been deleted.`,
+              variant: 'default',
+            });
             setCourseToDelete(null);
-          }
-        }}
-      />
+          }}
+        />
+      )}
     </div>
   );
 }

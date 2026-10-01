@@ -103,7 +103,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         '/admin/dashboard',
         '/admin/users',
         '/admin/progress',
+        '/admin/payments',
         '/admin/notifications',
+        '/admin/settings/integrations',
         '/admin/analytics',
         '/admin/profile',
       ];

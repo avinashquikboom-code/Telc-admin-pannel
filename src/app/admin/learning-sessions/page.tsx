@@ -11,6 +11,8 @@ import {
   Clock,
   Shuffle,
   RefreshCw,
+  Edit2,
+  Sliders,
 } from 'lucide-react';
 import { PageHeader } from '@/components/admin/navigation/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -18,9 +20,13 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { FormDrawer } from '@/components/admin/drawers/FormDrawer';
+import { useToast } from '@/components/ui/toast';
 import { useAdminStore } from '@/lib/store';
+import { LearningSessionConfig } from '@/types';
 
 export default function LearningSessionsPage() {
+  const { toast } = useToast();
   const {
     learningSessions,
     learningSequence,
@@ -29,13 +35,53 @@ export default function LearningSessionsPage() {
   } = useAdminStore();
 
   const [sequenceForm, setSequenceForm] = useState(learningSequence);
-  const [isSaved, setIsSaved] = useState(false);
+  const [isSequenceDrawerOpen, setIsSequenceDrawerOpen] = useState(false);
+
+  // Selected session for right drawer editing
+  const [selectedSession, setSelectedSession] = useState<LearningSessionConfig | null>(null);
+  const [sessionForm, setSessionForm] = useState<Partial<LearningSessionConfig>>({});
+
+  const handleOpenEditSession = (session: LearningSessionConfig) => {
+    setSelectedSession(session);
+    setSessionForm({
+      newWordsCount: session.newWordsCount,
+      previousWordsCount: session.previousWordsCount,
+      durationMinutes: session.durationMinutes,
+      cumulativeTestEnabled: session.cumulativeTestEnabled,
+      reviewPreviousEnabled: session.reviewPreviousEnabled,
+      status: session.status,
+    });
+  };
+
+  const handleSaveSession = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSession) return;
+
+    const totalWords = (sessionForm.newWordsCount || 0) + (sessionForm.previousWordsCount || 0);
+
+    updateLearningSession(selectedSession.id, {
+      ...sessionForm,
+      totalWordsCount: totalWords,
+    });
+
+    toast({
+      title: 'Session Configured',
+      description: `Day ${selectedSession.dayNumber} parameters updated successfully.`,
+      variant: 'success',
+    });
+
+    setSelectedSession(null);
+  };
 
   const handleSaveSequence = (e: React.FormEvent) => {
     e.preventDefault();
     updateLearningSequence(sequenceForm);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2500);
+    toast({
+      title: 'Global Sequence Saved',
+      description: 'Batch rules and daily targets synchronized with mobile clients.',
+      variant: 'success',
+    });
+    setIsSequenceDrawerOpen(false);
   };
 
   return (
@@ -44,19 +90,15 @@ export default function LearningSessionsPage() {
         title="Learning Sessions & Sequence"
         description="Configure mobile app daily learning sessions, batch sizes (4 words), and cumulative review test logic."
         actions={
-          <Button onClick={handleSaveSequence} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
-            <Save className="h-4 w-4" />
-            Save Configuration
+          <Button
+            onClick={() => setIsSequenceDrawerOpen(true)}
+            className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-xs"
+          >
+            <Sliders className="h-4 w-4" />
+            Configure Sequence Rules
           </Button>
         }
       />
-
-      {isSaved && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800 flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          Learning sequence parameters synchronized to mobile application API!
-        </div>
-      )}
 
       {/* Interactive Mobile Learning Cycle Flow Diagram */}
       <Card>
@@ -101,104 +143,15 @@ export default function LearningSessionsPage() {
                 Step 4
               </span>
               <p className="mt-1 font-bold text-slate-900 text-sm">Cumulative Test</p>
-              <p className="mt-1 text-[11px] text-slate-500">Tests all learned words so far</p>
+              <p className="mt-1 text-[11px] text-slate-500">Cumulative test across all batches</p>
             </div>
 
-            <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-center">
-              <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-center">
+              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
                 Step 5
               </span>
-              <p className="mt-1 font-bold text-slate-900 text-sm">
-                Repeat &rarr; {sequenceForm.dailyTarget} Target
-              </p>
-              <p className="mt-1 text-[11px] text-slate-500">Concludes daily quota</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Admin Sequence Control Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sequence Parameters</CardTitle>
-          <p className="text-xs text-slate-500">
-            Control the word batches and timing sent to client devices.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Words Per Learning Batch
-              </label>
-              <Input
-                type="number"
-                value={sequenceForm.wordsPerBatch}
-                onChange={(e) =>
-                  setSequenceForm({ ...sequenceForm, wordsPerBatch: Number(e.target.value) })
-                }
-              />
-              <p className="mt-1 text-[11px] text-slate-400">Default: 4 words</p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Daily Word Target
-              </label>
-              <Input
-                type="number"
-                value={sequenceForm.dailyTarget}
-                onChange={(e) =>
-                  setSequenceForm({ ...sequenceForm, dailyTarget: Number(e.target.value) })
-                }
-              />
-              <p className="mt-1 text-[11px] text-slate-400">Default: 20 words</p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Estimated Duration (Minutes)
-              </label>
-              <Input
-                type="number"
-                value={sequenceForm.learningTimeMinutes}
-                onChange={(e) =>
-                  setSequenceForm({ ...sequenceForm, learningTimeMinutes: Number(e.target.value) })
-                }
-              />
-              <p className="mt-1 text-[11px] text-slate-400">Default: 3 minutes</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/50 p-3.5">
-              <div>
-                <p className="text-xs font-semibold text-slate-800">Randomize Test Questions</p>
-                <p className="text-[11px] text-slate-500">
-                  Prevents positional memorization during tests
-                </p>
-              </div>
-              <Switch
-                checked={sequenceForm.randomizeQuestions}
-                onCheckedChange={(checked) =>
-                  setSequenceForm({ ...sequenceForm, randomizeQuestions: checked })
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/50 p-3.5">
-              <div>
-                <p className="text-xs font-semibold text-slate-800">Cumulative Testing</p>
-                <p className="text-[11px] text-slate-500">
-                  Tests previous batches together after Step 3
-                </p>
-              </div>
-              <Switch
-                checked={sequenceForm.cumulativeTestEnabled}
-                onCheckedChange={(checked) =>
-                  setSequenceForm({ ...sequenceForm, cumulativeTestEnabled: checked })
-                }
-              />
+              <p className="mt-1 font-bold text-slate-900 text-sm">Target Complete</p>
+              <p className="mt-1 text-[11px] text-slate-500">Daily target reached: 20 words</p>
             </div>
           </div>
         </CardContent>
@@ -206,11 +159,13 @@ export default function LearningSessionsPage() {
 
       {/* Daily Sessions Breakdown Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Chapter 1 Daily Session Schedule</CardTitle>
-          <p className="text-xs text-slate-500">
-            Schedule matrix mapping each learning day to new vs previous vocabulary items
-          </p>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <div>
+            <CardTitle>Chapter 1 Daily Session Schedule</CardTitle>
+            <p className="text-xs text-slate-500">
+              Schedule matrix mapping each learning day to new vs previous vocabulary items.
+            </p>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -224,6 +179,7 @@ export default function LearningSessionsPage() {
                   <th className="px-4 py-3">Duration</th>
                   <th className="px-4 py-3">Cumulative Test</th>
                   <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Configure</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -241,7 +197,7 @@ export default function LearningSessionsPage() {
                     </td>
                     <td className="px-4 py-3 text-slate-600">{session.durationMinutes} mins</td>
                     <td className="px-4 py-3">
-                      <Badge variant={session.cumulativeTestEnabled ? 'success' : 'secondary'}>
+                      <Badge variant={session.cumulativeTestEnabled ? 'default' : 'secondary'} className="text-[10px]">
                         {session.cumulativeTestEnabled ? 'Enabled' : 'Disabled'}
                       </Badge>
                     </td>
@@ -250,6 +206,17 @@ export default function LearningSessionsPage() {
                         {session.status}
                       </Badge>
                     </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenEditSession(session)}
+                        className="text-xs text-blue-600 hover:text-blue-700 h-7"
+                      >
+                        <Edit2 className="h-3.5 w-3.5 mr-1" />
+                        Configure
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -257,6 +224,165 @@ export default function LearningSessionsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ======================================================== */}
+      {/* 1. EDIT SESSION CONFIGURATION RIGHT-SIDE DRAWER */}
+      {/* ======================================================== */}
+      {selectedSession && (
+        <FormDrawer
+          open={!!selectedSession}
+          onOpenChange={(open) => !open && setSelectedSession(null)}
+          title={`Configure Session: Day ${selectedSession.dayNumber}`}
+          description="Adjust daily word distribution, duration limits, and cumulative testing."
+          submitLabel="Save Session"
+          onSubmit={handleSaveSession}
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">New Words Count</label>
+                <Input
+                  type="number"
+                  value={sessionForm.newWordsCount || 0}
+                  onChange={(e) =>
+                    setSessionForm({ ...sessionForm, newWordsCount: Number(e.target.value) })
+                  }
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Previous Words Count</label>
+                <Input
+                  type="number"
+                  value={sessionForm.previousWordsCount || 0}
+                  onChange={(e) =>
+                    setSessionForm({ ...sessionForm, previousWordsCount: Number(e.target.value) })
+                  }
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Duration (Minutes)</label>
+              <Input
+                type="number"
+                value={sessionForm.durationMinutes || 0}
+                onChange={(e) =>
+                  setSessionForm({ ...sessionForm, durationMinutes: Number(e.target.value) })
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-3.5 rounded-lg border border-slate-200 bg-slate-50">
+              <div>
+                <p className="text-xs font-semibold text-slate-800">Cumulative Test</p>
+                <p className="text-[11px] text-slate-500">Require cumulative evaluation at end of session</p>
+              </div>
+              <Switch
+                checked={sessionForm.cumulativeTestEnabled || false}
+                onCheckedChange={(val) => setSessionForm({ ...sessionForm, cumulativeTestEnabled: val })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-3.5 rounded-lg border border-slate-200 bg-slate-50">
+              <div>
+                <p className="text-xs font-semibold text-slate-800">Review Previous Words</p>
+                <p className="text-[11px] text-slate-500">Inject words from earlier days</p>
+              </div>
+              <Switch
+                checked={sessionForm.reviewPreviousEnabled || false}
+                onCheckedChange={(val) => setSessionForm({ ...sessionForm, reviewPreviousEnabled: val })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Session Status</label>
+              <select
+                value={sessionForm.status || 'active'}
+                onChange={(e) => setSessionForm({ ...sessionForm, status: e.target.value as any })}
+                className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </FormDrawer>
+      )}
+
+      {/* ======================================================== */}
+      {/* 2. GLOBAL SEQUENCE RULES RIGHT-SIDE DRAWER */}
+      {/* ======================================================== */}
+      <FormDrawer
+        open={isSequenceDrawerOpen}
+        onOpenChange={setIsSequenceDrawerOpen}
+        title="Learning Sequence Rules"
+        description="Global learning cycle and batch sizes pushed to mobile devices."
+        submitLabel="Save Sequence Rules"
+        onSubmit={handleSaveSequence}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Words Per Batch</label>
+            <Input
+              type="number"
+              value={sequenceForm.wordsPerBatch}
+              onChange={(e) =>
+                setSequenceForm({ ...sequenceForm, wordsPerBatch: Number(e.target.value) })
+              }
+            />
+            <p className="mt-1 text-[11px] text-slate-400">Default: 4 words per flashcard batch</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Daily Word Target</label>
+            <Input
+              type="number"
+              value={sequenceForm.dailyTarget}
+              onChange={(e) =>
+                setSequenceForm({ ...sequenceForm, dailyTarget: Number(e.target.value) })
+              }
+            />
+            <p className="mt-1 text-[11px] text-slate-400">Default: 20 words per day quota</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Learning Time (Minutes)</label>
+            <Input
+              type="number"
+              value={sequenceForm.learningTimeMinutes}
+              onChange={(e) =>
+                setSequenceForm({ ...sequenceForm, learningTimeMinutes: Number(e.target.value) })
+              }
+            />
+            <p className="mt-1 text-[11px] text-slate-400">Default: 3 minutes per batch</p>
+          </div>
+
+          <div className="flex items-center justify-between p-3.5 rounded-lg border border-slate-200 bg-slate-50">
+            <div>
+              <p className="text-xs font-semibold text-slate-800">Randomize Questions</p>
+              <p className="text-[11px] text-slate-500">Prevent positional memorization</p>
+            </div>
+            <Switch
+              checked={sequenceForm.randomizeQuestions}
+              onCheckedChange={(val) => setSequenceForm({ ...sequenceForm, randomizeQuestions: val })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3.5 rounded-lg border border-slate-200 bg-slate-50">
+            <div>
+              <p className="text-xs font-semibold text-slate-800">Cumulative Testing</p>
+              <p className="text-[11px] text-slate-500">Test cumulative vocabulary after Step 3</p>
+            </div>
+            <Switch
+              checked={sequenceForm.cumulativeTestEnabled}
+              onCheckedChange={(val) => setSequenceForm({ ...sequenceForm, cumulativeTestEnabled: val })}
+            />
+          </div>
+        </div>
+      </FormDrawer>
     </div>
   );
 }

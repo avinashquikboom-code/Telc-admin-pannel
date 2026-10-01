@@ -198,3 +198,177 @@ export interface PlatformAnalytics {
   testsCompletedTotal: number;
   avgTestScore: number;
 }
+
+// ==========================================
+// INTEGRATIONS & GATEWAY TYPES
+// ==========================================
+
+export type IntegrationProviderType = 'whatsapp' | 'email' | 'msg91' | 'razorpay' | 'webhooks';
+export type IntegrationStatus = 'connected' | 'error' | 'unconfigured';
+
+export interface WhatsAppFeatures {
+  otp: boolean;
+  welcome: boolean;
+  enrollment: boolean;
+  learningReminder: boolean;
+  reviewReminder: boolean;
+  testCompletion: boolean;
+  paymentConfirmation: boolean;
+  adminTriggered: boolean;
+}
+
+export interface WhatsAppConfig {
+  enabled: boolean;
+  phoneNumberId: string;
+  wabaId: string;
+  accessToken: string;
+  webhookVerifyToken: string;
+  apiVersion: string;
+  defaultTemplate: string;
+  testPhone: string;
+  features: WhatsAppFeatures;
+  status: IntegrationStatus;
+  lastChecked: string;
+}
+
+export interface EmailConfig {
+  enabled: boolean;
+  provider: 'smtp' | 'resend' | 'sendgrid' | 'ses';
+  smtpHost: string;
+  smtpPort: number;
+  username: string;
+  password: string;
+  apiKey: string;
+  fromName: string;
+  fromEmail: string;
+  replyTo: string;
+  status: IntegrationStatus;
+  lastChecked: string;
+}
+
+export interface Msg91Features {
+  otp: boolean;
+  loginVerification: boolean;
+  passwordReset: boolean;
+  learningNotification: boolean;
+  paymentNotification: boolean;
+  accountNotification: boolean;
+}
+
+export interface Msg91Config {
+  enabled: boolean;
+  authKey: string;
+  senderId: string;
+  dltTemplateId: string;
+  otpTemplateId: string;
+  countryCode: string;
+  testPhone: string;
+  features: Msg91Features;
+  status: IntegrationStatus;
+  lastChecked: string;
+}
+
+export interface RazorpayConfig {
+  enabled: boolean;
+  keyId: string;
+  keySecret: string;
+  webhookSecret: string;
+  mode: 'test' | 'live';
+  currency: 'EUR' | 'INR' | 'USD';
+  status: IntegrationStatus;
+  lastChecked: string;
+}
+
+// ==========================================
+// UNIFIED NOTIFICATION SERVICE TYPES
+// ==========================================
+
+export type NotificationEvent =
+  | 'USER_REGISTERED'
+  | 'OTP_REQUESTED'
+  | 'COURSE_ENROLLED'
+  | 'LEARNING_REMINDER'
+  | 'REVIEW_REMINDER'
+  | 'TEST_COMPLETED'
+  | 'PAYMENT_SUCCESS'
+  | 'PAYMENT_FAILED'
+  | 'REFUND_COMPLETED'
+  | 'PASSWORD_RESET';
+
+export interface NotificationChannelRule {
+  event: NotificationEvent;
+  title: string;
+  description: string;
+  email: boolean;
+  whatsapp: boolean;
+  sms: boolean;
+}
+
+export interface NotificationLog {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail?: string;
+  userPhone?: string;
+  event: NotificationEvent;
+  channel: 'EMAIL' | 'WHATSAPP' | 'SMS';
+  provider: string;
+  status: 'PENDING' | 'PROCESSING' | 'SENT' | 'DELIVERED' | 'FAILED';
+  message: string;
+  externalMessageId?: string;
+  createdAt: string;
+  sentAt?: string;
+  error?: string;
+}
+
+export interface NotificationTemplate {
+  id: string;
+  name: string;
+  event: NotificationEvent;
+  channel: 'EMAIL' | 'WHATSAPP' | 'SMS';
+  subject?: string;
+  body: string;
+  variables: string[];
+  status: 'active' | 'draft';
+}
+
+// ==========================================
+// WEBHOOK MANAGEMENT TYPES
+// ==========================================
+
+export interface WebhookEvent {
+  id: string;
+  event: string;
+  provider: 'Razorpay' | 'WhatsApp' | 'Email' | 'MSG91';
+  receivedAt: string;
+  status: 'SUCCESS' | 'PROCESSED' | 'DUPLICATE_IGNORED' | 'SIGNATURE_FAILED' | 'FAILED';
+  retryCount: number;
+  payload: Record<string, any>;
+  response?: Record<string, any>;
+  error?: string;
+}
+
+// ==========================================
+// PAYMENT & TRANSACTIONS TYPES
+// ==========================================
+
+export interface PaymentTransaction {
+  id: string;
+  orderId: string;
+  paymentId: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  courseId: string;
+  courseTitle: string;
+  amount: number;
+  currency: string;
+  status: 'SUCCESS' | 'PENDING' | 'FAILED' | 'REFUNDED';
+  method: string;
+  signatureVerified: boolean;
+  refundAmount?: number;
+  refundReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+

@@ -22,6 +22,8 @@ import {
   ChevronRight,
   ShieldCheck,
   GraduationCap,
+  CreditCard,
+  Puzzle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth/authContext';
@@ -74,6 +76,12 @@ const menuGroups: AdminMenuGroup[] = [
     ],
   },
   {
+    label: 'Financial',
+    items: [
+      { title: 'Payments', href: '/admin/payments', icon: CreditCard },
+    ],
+  },
+  {
     label: 'Analytics',
     items: [
       { title: 'Overview', href: '/admin/analytics', icon: BarChart3 },
@@ -85,6 +93,7 @@ const menuGroups: AdminMenuGroup[] = [
     label: 'System',
     items: [
       { title: 'Notifications', href: '/admin/notifications', icon: Bell },
+      { title: 'Integrations', href: '/admin/settings/integrations', icon: Puzzle },
       { title: 'Settings', href: '/admin/settings', icon: Settings },
     ],
   },
