@@ -39,7 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           onOpenMobileMenu={() => setMobileDrawerOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto min-w-0">
           {!hasAccess ? (
             <div className="flex min-h-[400px] flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50/50 p-8 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700 mb-4">

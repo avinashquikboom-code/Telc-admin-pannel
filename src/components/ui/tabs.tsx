@@ -46,13 +46,15 @@ export function Tabs({
 
 export function TabsList({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div
-      className={cn(
-        'inline-flex h-10 items-center justify-center rounded-lg bg-slate-100 p-1 text-slate-500 border border-slate-200/60',
-        className
-      )}
-    >
-      {children}
+    <div className="w-full overflow-x-auto scrollbar-none pb-1">
+      <div
+        className={cn(
+          'inline-flex h-10 items-center justify-start sm:justify-center rounded-lg bg-slate-100 p-1 text-slate-500 border border-slate-200/60 min-w-max',
+          className
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }

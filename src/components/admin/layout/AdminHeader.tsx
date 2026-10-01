@@ -46,25 +46,31 @@ export function AdminHeader({ onOpenMobileMenu, collapsed }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-slate-200/90 bg-white/95 px-4 sm:px-6 backdrop-blur-xs">
-      {/* Left: Mobile Toggle & Breadcrumb */}
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-slate-200/90 bg-white/95 px-3 sm:px-6 backdrop-blur-xs min-w-0">
+      {/* Left: Mobile Menu + Title on Mobile, Full Breadcrumb on Tablet/Desktop */}
+      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
         <button
           onClick={onOpenMobileMenu}
-          className="md:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
+          className="md:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer"
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-2 text-sm">
-          <a href="/admin/dashboard" className="text-slate-500 hover:text-slate-900 font-medium">
+        {/* Mobile: Just the page title */}
+        <span className="sm:hidden font-semibold text-slate-900 text-sm truncate">
+          {pageTitle}
+        </span>
+
+        {/* Tablet & Desktop: Breadcrumb */}
+        <div className="hidden sm:flex items-center gap-2 text-sm min-w-0 truncate">
+          <a href="/admin/dashboard" className="text-slate-500 hover:text-slate-900 font-medium shrink-0">
             Dashboard
           </a>
           {pathSegments.map((segment, idx) => (
             <React.Fragment key={idx}>
-              <span className="text-slate-300">/</span>
-              <span className="font-semibold text-slate-800 capitalize">
+              <span className="text-slate-300 shrink-0">/</span>
+              <span className="font-semibold text-slate-800 capitalize truncate">
                 {segment.replace(/-/g, ' ')}
               </span>
             </React.Fragment>
@@ -72,28 +78,28 @@ export function AdminHeader({ onOpenMobileMenu, collapsed }: HeaderProps) {
         </div>
       </div>
 
-      {/* Center Search */}
-      <div className="hidden lg:flex max-w-xs flex-1 mx-4">
+      {/* Center Search (Tablet & Desktop) */}
+      <div className="hidden md:flex max-w-[180px] lg:max-w-xs flex-1 mx-2 lg:mx-4 min-w-0">
         <form onSubmit={handleSearch} className="relative w-full">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search words, courses, learners..."
+            placeholder="Search words, courses..."
             className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-hidden"
           />
         </form>
       </div>
 
-      {/* Right Controls: Role Switcher, Notification, Admin Profile */}
-      <div className="flex items-center gap-3">
-        {/* Role Switcher Pill - Excellent for demonstrating Role-Based Access */}
+      {/* Right Controls: Role Switcher (Desktop XL), Notification, Admin Profile */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Role Switcher Pill - visible on large screens */}
         {user && (
-          <div className="relative">
+          <div className="relative hidden xl:block">
             <button
               onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-              className="hidden sm:flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+              className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <Shield className="h-3.5 w-3.5 text-blue-600" />
               <span>Role: <strong className="text-blue-700">{user.role.replace('_', ' ')}</strong></span>
@@ -124,7 +130,7 @@ export function AdminHeader({ onOpenMobileMenu, collapsed }: HeaderProps) {
         )}
 
         {/* Notifications Icon */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <a
             href="/admin/notifications"
             className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
@@ -137,12 +143,12 @@ export function AdminHeader({ onOpenMobileMenu, collapsed }: HeaderProps) {
         </div>
 
         {/* Admin Avatar & Dropdown */}
-        <div className="flex items-center gap-2 pl-1">
+        <div className="flex items-center gap-2 shrink-0">
           <a href="/admin/settings" className="flex items-center gap-2 cursor-pointer">
             <img
               src={user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
               alt={user?.name || 'Admin'}
-              className="h-8 w-8 rounded-full border border-slate-200 object-cover"
+              className="h-8 w-8 rounded-full border border-slate-200 object-cover shrink-0"
             />
             <div className="hidden xl:block text-left">
               <p className="text-xs font-semibold text-slate-900 leading-tight">{user?.name}</p>
