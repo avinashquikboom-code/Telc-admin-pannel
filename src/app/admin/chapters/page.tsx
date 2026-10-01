@@ -32,7 +32,7 @@ export default function ChaptersPage() {
     return true;
   });
 
-  const columns: ColumnDef<Chapter>[] = [
+  const columns: ColumnDef<Chapter, any>[] = [
     {
       accessorKey: 'title',
       header: 'Chapter',
