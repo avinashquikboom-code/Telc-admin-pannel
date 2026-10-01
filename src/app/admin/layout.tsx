@@ -30,8 +30,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content Area */}
       <div
         className={cn(
-          'flex flex-1 flex-col min-w-0 transition-all duration-200 ease-in-out',
-          sidebarCollapsed ? 'md:pl-[72px]' : 'md:pl-[260px]'
+          'flex flex-1 flex-col min-w-0 transition-[padding] duration-200 ease-in-out',
+          sidebarCollapsed ? 'md:pl-[80px]' : 'md:pl-[260px]'
         )}
       >
         <AdminHeader
