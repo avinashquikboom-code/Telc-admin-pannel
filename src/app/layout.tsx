@@ -5,6 +5,9 @@ import { AppProviders } from '@/providers/QueryProvider';
 export const metadata: Metadata = {
   title: 'TELC Mastery — Admin Panel',
   description: 'Complete Learning Management & Content Administration Platform for TELC Mastery German Vocabulary Application',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
