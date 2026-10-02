@@ -146,7 +146,7 @@ export default function AdminLoginPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs pt-1">
+          <div className="flex items-center text-xs pt-1">
             <label className="flex items-center gap-2 cursor-pointer text-slate-600">
               <input
                 type="checkbox"
@@ -155,16 +155,6 @@ export default function AdminLoginPage() {
               />
               Remember me
             </label>
-            <a
-              href="#forgot"
-              onClick={(e) => {
-                e.preventDefault();
-                alert('Password reset instructions have been sent to admin recovery email.');
-              }}
-              className="text-blue-600 hover:underline font-medium"
-            >
-              Forgot password?
-            </a>
           </div>
 
           <Button type="submit" isLoading={isLoading} className="w-full h-10 mt-2 bg-blue-600 hover:bg-blue-700">
