@@ -100,7 +100,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[950px] space-y-5 sm:space-y-6">
+    <div className="w-full space-y-5 sm:space-y-6">
       <PageHeader
         title="Settings & Role Management"
         description="Configure application defaults, learning algorithm parameters, admin credentials, and role-based permissions."

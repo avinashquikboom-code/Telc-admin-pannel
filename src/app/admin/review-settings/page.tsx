@@ -54,7 +54,7 @@ export default function ReviewSettingsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[950px] space-y-5 sm:space-y-6">
+    <div className="w-full space-y-5 sm:space-y-6">
       <PageHeader
         title="Review Settings"
         description="Global algorithm parameters governing spaced vocabulary review, chapter wrap-up sessions, and mobile learning targets."
